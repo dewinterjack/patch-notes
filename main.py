@@ -5,21 +5,64 @@ from langchain_openai import ChatOpenAI
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.pydantic_v1 import BaseModel, Field
+from enum import Enum
 import pprint
+from typing import List
 
-model = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+model = ChatOpenAI(temperature=0, model="gpt-4o")
 
-class Article(BaseModel):
-    title: str = Field(description="The title of the article")
-    summary: str = Field(description="A brief summary of the article")
+class SubjectCategory(Enum):
+    CHAMPION = "champion"
+    ITEM = "item"
+    RUNE = "rune"
+    SPELL = "spell"
+    OBJECTIVE = "objective"
+    JUNGLE = "jungle"
+    RANKED = "ranked"
+    MISC = "misc"
 
-structured_llm = model.with_structured_output(Article)
+class Subject(BaseModel):
+    name: str = Field(description="The name of the subject")
+    category: SubjectCategory = Field(description="Tags describing the subject", default=SubjectCategory.MISC)
+
+class ChangeTags(Enum):
+    BUGFIX = "bugfix"
+    BUFF = "buff"
+    NERF = "nerf"
+    ADJUSTMENT = "adjustment"
+    GAMEPLAY = "gameplay"
+    OBJECTIVES = "objectives"
+    JUNGLE = "jungle"
+    MINIONS = "minions"
+    GOLD = "gold"
+    EXPERIENCE = "experience"
+    RANKED = "ranked"
+    QUALITY_OF_LIFE = "quality_of_life"
+    BASE_STATS = "base_stats"
+    SCALING = "scaling"
+    TECHNICAL = "technical"
+    COOLDOWN = "cooldown"
+    RATIO = "ratio"
+    ARENA = "arena"
+    ARAM = "aram"
+    TFT = "tft"
+    MISC = "misc"
+
+class Change(BaseModel):
+    title: str = Field(description="The title of the change")
+    summary: str = Field(description="A brief summary of the change")
+    subject: Subject = Field(description="The subject receiving the change")
+    tags: List[ChangeTags] = Field(description="Tags describing the change")
+
+class List_of_Changes(BaseModel):
+    changes: List[Change] = Field(description="The list of changes")
+
+structured_llm = model.with_structured_output(List_of_Changes)
 
 def extract(content: str):
     return structured_llm.invoke(content)
 
 def scrape(urls):
-    urls = ["https://www.espn.com", "https://lilianweng.github.io/posts/2023-06-23-agent/"]
     loader = AsyncHtmlLoader(urls)
     docs = loader.load()
     bs_transformer = BeautifulSoupTransformer()
@@ -35,7 +78,14 @@ def scrape(urls):
     pprint.pprint(extracted_content)
     return extracted_content
 
-urls = ["https://www.espn.com", "https://lilianweng.github.io/posts/2023-06-23-agent/"]
+def generate_patch_url(major, minor):
+    return (
+        f"https://www.leagueoflegends.com/en-us/news/game-updates/"
+        f"patch-{major}-{minor}-notes/"
+    )
+
+urls = [generate_patch_url(14, minor) for minor in range(8, 11)]
 
 extracted_content = scrape(urls)
+
 
