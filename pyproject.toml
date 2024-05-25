@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "patch-notes"
+version = "0.1.0"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain = "^0.2.1"
+langchain-openai = "^0.1.7"
+python-dotenv = "^1.0.1"
+beautifulsoup4 = "^4.12.3"
+langchain-community = "^0.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,5 +1,4 @@
-import dotenv
-dotenv.load_dotenv()
+from dotenv import load_dotenv
 from langchain_community.document_loaders import AsyncHtmlLoader
 from langchain_openai import ChatOpenAI
 from langchain_community.document_transformers import BeautifulSoupTransformer
@@ -9,7 +8,11 @@ from enum import Enum
 import pprint
 from typing import List
 
+load_dotenv()
+
+
 model = ChatOpenAI(temperature=0, model="gpt-4o")
+
 
 class SubjectCategory(Enum):
     CHAMPION = "champion"
@@ -21,9 +24,13 @@ class SubjectCategory(Enum):
     RANKED = "ranked"
     MISC = "misc"
 
+
 class Subject(BaseModel):
     name: str = Field(description="The name of the subject")
-    category: SubjectCategory = Field(description="Tags describing the subject", default=SubjectCategory.MISC)
+    category: SubjectCategory = Field(
+        description="Tags describing the subject", default=SubjectCategory.MISC
+    )
+
 
 class ChangeTags(Enum):
     BUGFIX = "bugfix"
@@ -49,19 +56,24 @@ class ChangeTags(Enum):
     TFT = "tft"
     MISC = "misc"
 
+
 class Change(BaseModel):
     title: str = Field(description="The title of the change")
     summary: str = Field(description="A brief summary of the change")
     subject: Subject = Field(description="The subject receiving the change")
     tags: List[ChangeTags] = Field(description="Tags describing the change")
 
+
 class List_of_Changes(BaseModel):
     changes: List[Change] = Field(description="The list of changes")
 
+
 structured_llm = model.with_structured_output(List_of_Changes)
+
 
 def extract(content: str):
     return structured_llm.invoke(content)
+
 
 def scrape(urls):
     loader = AsyncHtmlLoader(urls)
@@ -72,12 +84,13 @@ def scrape(urls):
     )
     print("Extracting content with LLM")
     splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    chunk_size=1000, chunk_overlap=0
+        chunk_size=1000, chunk_overlap=0
     )
     splits = splitter.split_documents(docs_transformed)
     extracted_content = extract(content=splits[0].page_content)
     pprint.pprint(extracted_content)
     return extracted_content
+
 
 def generate_patch_url(major, minor):
     return (
@@ -85,8 +98,7 @@ def generate_patch_url(major, minor):
         f"patch-{major}-{minor}-notes/"
     )
 
+
 urls = [generate_patch_url(14, minor) for minor in range(8, 11)]
 
 extracted_content = scrape(urls)
-
-
