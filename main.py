@@ -1,18 +1,16 @@
 from dotenv import load_dotenv
 from langchain_community.document_loaders import AsyncHtmlLoader
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.pydantic_v1 import BaseModel, Field
 from enum import Enum
-import pprint
 from typing import List
+from langchain.docstore.document import Document
+from langchain_community.vectorstores import Chroma
+from langchain.chains import RetrievalQA
 
 load_dotenv()
-
-
-model = ChatOpenAI(temperature=0, model="gpt-4o")
-
 
 class SubjectCategory(Enum):
     CHAMPION = "champion"
@@ -68,9 +66,6 @@ class List_of_Changes(BaseModel):
     changes: List[Change] = Field(description="The list of changes")
 
 
-structured_llm = model.with_structured_output(List_of_Changes)
-
-
 def extract(content: str):
     return structured_llm.invoke(content)
 
@@ -88,7 +83,7 @@ def scrape(urls):
     )
     splits = splitter.split_documents(docs_transformed)
     extracted_content = extract(content=splits[0].page_content)
-    pprint.pprint(extracted_content)
+
     return extracted_content
 
 
@@ -98,7 +93,25 @@ def generate_patch_url(major, minor):
         f"patch-{major}-{minor}-notes/"
     )
 
+model = ChatOpenAI(temperature=0, model="gpt-4o")
+structured_llm = model.with_structured_output(List_of_Changes)
 
 urls = [generate_patch_url(14, minor) for minor in range(8, 11)]
 
 extracted_content = scrape(urls)
+
+documents = [Document(page_content=change.summary, metadata={"title": change.title}) for change in extracted_content.changes]
+embeddings = OpenAIEmbeddings()
+vectorstore = Chroma.from_documents(documents, embedding=embeddings)
+retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+
+qa_chain = RetrievalQA.from_chain_type(
+    llm=model,
+    chain_type="stuff",
+    retriever=retriever
+)
+
+
+query = "What are the recent changes related to Skarner?"
+answer = qa_chain.invoke(query)
+print(answer)
