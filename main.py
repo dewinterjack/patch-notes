@@ -41,6 +41,7 @@ class ChangeTags(Enum):
     BASE_STATS = "base_stats"
     SCALING = "scaling"
     TECHNICAL = "technical"
+    SERVERS = "servers"
     COOLDOWN = "cooldown"
     RATIO = "ratio"
     ARENA = "arena"
