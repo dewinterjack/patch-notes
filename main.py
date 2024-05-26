@@ -9,6 +9,8 @@ from typing import List
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 
@@ -100,18 +102,33 @@ urls = [generate_patch_url(14, minor) for minor in range(8, 11)]
 
 extracted_content = scrape(urls)
 
-documents = [Document(page_content=change.summary, metadata={"title": change.title}) for change in extracted_content.changes]
-embeddings = OpenAIEmbeddings()
-vectorstore = Chroma.from_documents(documents, embedding=embeddings)
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+# documents = [Document(page_content=change.summary, metadata={"title": change.title}) for change in extracted_content.changes]
+# embeddings = OpenAIEmbeddings()
+# vectorstore = Chroma.from_documents(documents, embedding=embeddings)
+# retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
 
-qa_chain = RetrievalQA.from_chain_type(
-    llm=model,
-    chain_type="stuff",
-    retriever=retriever
-)
+# qa_chain = RetrievalQA.from_chain_type(
+#     llm=model,
+#     chain_type="stuff",
+#     retriever=retriever
+# )
 
 
-query = "What are the recent changes related to Skarner?"
-answer = qa_chain.invoke(query)
-print(answer)
+# query = "What are the recent changes related to Skarner?"
+# answer = qa_chain.invoke(query)
+# print(answer)
+
+prompt_str = """Answer the question below using the context:
+
+Context: {context}
+
+Question: {question}
+
+Answer: """
+prompt = ChatPromptTemplate.from_template(prompt_str)
+
+chain = prompt | model | StrOutputParser()
+
+result = chain.invoke({ "context": extracted_content, "question": "What are the recent changes related to Skarner?"})
+print(result)
+
