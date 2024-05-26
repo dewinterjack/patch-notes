@@ -1349,6 +1349,24 @@ tenacity = ">=8.1.0,<9.0.0"
 extended-testing = ["jinja2 (>=3,<4)"]
 
 [[package]]
+name = "langchain-experimental"
+version = "0.0.59"
+description = "Building applications with LLMs through composability"
+optional = false
+python-versions = "<4.0,>=3.8.1"
+files = [
+    {file = "langchain_experimental-0.0.59-py3-none-any.whl", hash = "sha256:d6ceb586c15ad35fc619542e86d01f0984a94985324a78a9ed8cd87615ff265d"},
+    {file = "langchain_experimental-0.0.59.tar.gz", hash = "sha256:3a93f5c328f6ee1cd4f9dd8792c535df2d5638cff0d778ee25546804b5282fda"},
+]
+
+[package.dependencies]
+langchain-community = ">=0.2,<0.3"
+langchain-core = ">=0.2,<0.3"
+
+[package.extras]
+extended-testing = ["faker (>=19.3.1,<20.0.0)", "jinja2 (>=3,<4)", "pandas (>=2.0.1,<3.0.0)", "presidio-analyzer (>=2.2.352,<3.0.0)", "presidio-anonymizer (>=2.2.352,<3.0.0)", "sentence-transformers (>=2,<3)", "tabulate (>=0.9.0,<0.10.0)", "vowpal-wabbit-next (==0.6.0)"]
+
+[[package]]
 name = "langchain-openai"
 version = "0.1.7"
 description = "An integration package connecting OpenAI and LangChain"
@@ -1380,6 +1398,21 @@ langchain-core = ">=0.2.0,<0.3.0"
 
 [package.extras]
 extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
+
+[[package]]
+name = "langgraph"
+version = "0.0.55"
+description = "langgraph"
+optional = false
+python-versions = "<4.0,>=3.9.0"
+files = [
+    {file = "langgraph-0.0.55-py3-none-any.whl", hash = "sha256:98abfaea107af79cfe3e9eb3768542fcff6c78561d79f3a532099bd17c0b9be2"},
+    {file = "langgraph-0.0.55.tar.gz", hash = "sha256:beb74bff8429b98d5840882a615913a3df4a6986825b96cf3b6453c9aab013b1"},
+]
+
+[package.dependencies]
+langchain-core = ">=0.2,<0.3"
+uuid6 = ">=2024.1.12,<2025.0.0"
 
 [[package]]
 name = "langsmith"
@@ -3140,6 +3173,17 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "uuid6"
+version = "2024.1.12"
+description = "New time-based UUID formats which are suited for use as a database key"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "uuid6-2024.1.12-py3-none-any.whl", hash = "sha256:8150093c8d05a331bc0535bc5ef6cf57ac6eceb2404fd319bc10caee2e02c065"},
+    {file = "uuid6-2024.1.12.tar.gz", hash = "sha256:ed0afb3a973057575f9883201baefe402787ca5e11e1d24e377190f0c43f1993"},
+]
+
+[[package]]
 name = "uvicorn"
 version = "0.29.0"
 description = "The lightning-fast ASGI server."
@@ -3593,4 +3637,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.11"
-content-hash = "1855fb9e801e67ed0c3ebad83bbfb876c99e3e5a5a72646f18a10e433f6e63d0"
+content-hash = "18a451fc09583f696239a48cd04c48b5742d78b012eaad429df7f7618f5f5433"

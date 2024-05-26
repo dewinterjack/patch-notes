@@ -14,6 +14,8 @@ beautifulsoup4 = "4.12.3"
 langchain-community = "0.2.1"
 chromadb = "^0.5.0"
 asyncio = "^3.4.3"
+langgraph = "^0.0.55"
+langchain-experimental = "^0.0.59"
 
 
 [build-system]
