@@ -90,7 +90,7 @@ def scrape(urls):
     )
     splits = splitter.split_documents(docs_transformed)
 
-    return structured_llm.invoke(splits[0].page_content)
+    return splits[0].page_content
 
 
 def generate_patch_url(chainInput):
@@ -108,7 +108,7 @@ urlGeneratorRunnable = RunnableLambda(generate_patch_url)
 scrapeRunnable = RunnableLambda(scrape)
 retriever = RunnableParallel(
     {
-        "context": urlGeneratorRunnable | scrapeRunnable,
+        "context": urlGeneratorRunnable | scrapeRunnable | structured_llm,
         "question": RunnablePassthrough(),
     }
 )
