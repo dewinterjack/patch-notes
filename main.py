@@ -1,18 +1,22 @@
+import asyncio
 from dotenv import load_dotenv
 from langchain_community.document_loaders import AsyncHtmlLoader
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.pydantic_v1 import BaseModel, Field
 from enum import Enum
 from typing import List
-from langchain.docstore.document import Document
-from langchain_community.vectorstores import Chroma
-from langchain.chains import RetrievalQA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import (
+    RunnableParallel,
+    RunnablePassthrough,
+    RunnableLambda,
+)
 
 load_dotenv()
+
 
 class SubjectCategory(Enum):
     CHAMPION = "champion"
@@ -68,11 +72,12 @@ class List_of_Changes(BaseModel):
     changes: List[Change] = Field(description="The list of changes")
 
 
-def extract(content: str):
-    return structured_llm.invoke(content)
+model = ChatOpenAI(temperature=0, model="gpt-4o")
+structured_llm = model.with_structured_output(List_of_Changes)
 
 
 def scrape(urls):
+    print(f"URLS: {urls}")
     loader = AsyncHtmlLoader(urls)
     docs = loader.load()
     bs_transformer = BeautifulSoupTransformer()
@@ -84,42 +89,31 @@ def scrape(urls):
         chunk_size=1000, chunk_overlap=0
     )
     splits = splitter.split_documents(docs_transformed)
-    extracted_content = extract(content=splits[0].page_content)
 
-    return extracted_content
-
-
-def generate_patch_url(major, minor):
-    return (
-        f"https://www.leagueoflegends.com/en-us/news/game-updates/"
-        f"patch-{major}-{minor}-notes/"
-    )
-
-model = ChatOpenAI(temperature=0, model="gpt-4o")
-structured_llm = model.with_structured_output(List_of_Changes)
-
-urls = [generate_patch_url(14, minor) for minor in range(8, 11)]
-
-extracted_content = scrape(urls)
-
-# documents = [Document(page_content=change.summary, metadata={"title": change.title}) for change in extracted_content.changes]
-# embeddings = OpenAIEmbeddings()
-# vectorstore = Chroma.from_documents(documents, embedding=embeddings)
-# retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
-
-# qa_chain = RetrievalQA.from_chain_type(
-#     llm=model,
-#     chain_type="stuff",
-#     retriever=retriever
-# )
+    return structured_llm.invoke(splits[0].page_content)
 
 
-# query = "What are the recent changes related to Skarner?"
-# answer = qa_chain.invoke(query)
-# print(answer)
+def generate_patch_url(chainInput):
+    patch_versions = chainInput["patch_versions"]
+    urls = []
+    for major, minor in patch_versions:
+        urls.append(
+            f"https://www.leagueoflegends.com/en-us/news/game-updates/"
+            f"patch-{major}-{minor}-notes/"
+        )
+    return urls
+
+
+urlGeneratorRunnable = RunnableLambda(generate_patch_url)
+scrapeRunnable = RunnableLambda(scrape)
+retriever = RunnableParallel(
+    {
+        "context": urlGeneratorRunnable | scrapeRunnable,
+        "question": RunnablePassthrough(),
+    }
+)
 
 prompt_str = """Answer the question below using the context:
-
 Context: {context}
 
 Question: {question}
@@ -127,8 +121,17 @@ Question: {question}
 Answer: """
 prompt = ChatPromptTemplate.from_template(prompt_str)
 
-chain = prompt | model | StrOutputParser()
+chain = retriever | prompt | model | StrOutputParser()
 
-result = chain.invoke({ "context": extracted_content, "question": "What are the recent changes related to Skarner?"})
-print(result)
 
+async def run_chain():
+    result = await chain.ainvoke(
+        {
+            "patch_versions": [[14, 8], [14, 9], [14, 10]],
+            "question": "What are the recent changes related to Skarner?",
+        }
+    )
+    print(result)
+
+
+asyncio.run(run_chain())
